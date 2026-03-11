@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 struct Node {
-  int n;
   int *from;
   int *dist;
 };
