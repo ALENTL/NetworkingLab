@@ -1,23 +1,18 @@
 #include <arpa/inet.h>
-#include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <unistd.h>
 
-#define PORT 8086
-
 int main() {
-  int sock_fd, connfd, clientlen;
+  int sockfd, connfd;
   struct sockaddr_in server, client;
 
-  sock_fd = socket(AF_INET, SOCK_STREAM, 0);
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (sock_fd < 0) {
+  if (sockfd < 0) {
     printf("Socket Creation Failed!\n");
     return -1;
   }
@@ -25,63 +20,66 @@ int main() {
 
   server.sin_family = AF_INET;
   server.sin_port = htons(8086);
-  server.sin_addr.s_addr = htonl(INADDR_ANY);
+  server.sin_addr.s_addr = INADDR_ANY;
 
-  if (bind(sock_fd, (struct sockaddr *)&server, sizeof(server)) < 0) {
-    printf("Socket Binding Failed!\n");
+  if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+    printf("Binding Failed!\n");
     return -1;
   }
-  printf("Socket Binded Successfully!\n");
+  printf("Binded Successfully!\n");
 
-  if (listen(sock_fd, 3) < 0) {
-    printf("Listening Failed!\n");
+  if (listen(sockfd, 3) < 0) {
+    printf("Listen Failed!\n");
     return -1;
   }
-  printf("Listening...\n");
+  printf("Listening! ... \n");
 
-  connfd = accept(sock_fd, (struct sockaddr *)&client, (socklen_t *)&clientlen);
+  int clientlen = sizeof(client);
+  connfd = accept(sockfd, (struct sockaddr *)&client, (socklen_t *)&clientlen);
 
   if (connfd < 0) {
-    printf("Server Client Connection Failed!\n");
+    printf("Conneiction to Server Failed!\n");
     return -1;
   }
-  printf("Client-Server Connection Established!\n");
+  printf("Connection to the Server Established!\n");
 
-  char command[100] = "", sender_mail_addr[100] = "", rcpt_mail_addr[100] = "",
-       body[200] = "";
+  char command[100] = {0}, sender_mail_addr[100] = {0},
+       recipient_mail_addr[100] = {0}, body[200] = {0};
 
-  printf("Enter HELO to start communication: ");
+  printf("Enter HELO command to start the communication: ");
   read(connfd, command, sizeof(command));
 
   if (strncmp(command, "HELO", 4) == 0) {
-    printf("HELO command received\nCommunication Established\n");
+    printf("HELO command received\nCommunication Established!\n");
+  }
 
-    while (1) {
-      read(connfd, command, sizeof(command));
+  while (1) {
+    read(connfd, command, sizeof(command));
 
-      if (strncmp(command, "MAIL FROM", 9) == 0) {
-        read(connfd, sender_mail_addr, sizeof(sender_mail_addr));
-      } else if (strncmp(command, "RCPT TO", 7) == 0) {
-        read(connfd, rcpt_mail_addr, sizeof(rcpt_mail_addr));
-      } else if (strncmp(command, "DATA", 4) == 0) {
-        read(connfd, body, sizeof(body));
-      } else if (strncmp(command, "QUIT", 4) == 0) {
-        printf("Quitting\n");
-        exit(0);
-      } else {
-        printf("Invalid Command!\n");
-      }
+    if (strncmp(command, "MAIL FROM", 9) == 0) {
+      read(connfd, sender_mail_addr, sizeof(sender_mail_addr));
+    } else if (strncmp(command, "RCPT TO", 7) == 0) {
+      read(connfd, recipient_mail_addr, sizeof(recipient_mail_addr));
+    } else if (strncmp(command, "DATA", 4) == 0) {
+      read(connfd, body, sizeof(body));
+    } else if (strncmp(command, "QUIT", 4) == 0) {
+      exit(0);
+    } else {
+      printf("Invalid Command\n");
+    }
 
-      if (strcmp(body, "") != 0 && strcmp(rcpt_mail_addr, "") != 0 &&
-          strcmp(sender_mail_addr, "") != 0) {
-        printf("\nMail Received.\n");
-        printf("Sender Mail Address: %s\n", sender_mail_addr);
-        printf("Recipient Mail Address: %s\n", rcpt_mail_addr);
-        printf("Body: %s\n", body);
-        strcpy(sender_mail_addr, "");
-        strcpy(rcpt_mail_addr, "");
-        strcpy(body, "");
-      }
+    if (strcmp(sender_mail_addr, "") != 0 &&
+        strcmp(recipient_mail_addr, "") != 0 && strcmp(body, "") != 0) {
+      printf("\nMail Received!\n");
+      printf("Sender Mail Address: %s", sender_mail_addr);
+      printf("Recipient Mail Address: %s", recipient_mail_addr);
+      printf("Body: %s", body);
+
+      strcpy(sender_mail_addr, "");
+      strcpy(recipient_mail_addr, "");
+      strcpy(body, "");
     }
   }
+
+  return 0;
 }

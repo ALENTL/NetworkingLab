@@ -1,12 +1,9 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <netdb.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <sys/time.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 int main() {

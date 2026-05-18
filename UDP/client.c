@@ -1,19 +1,17 @@
 #include <arpa/inet.h>
-#include <netinet/in.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 int main() {
-  int sock_fd;
+  int socdef;
   struct sockaddr_in server;
   int clientlen = sizeof(server);
+  int r = 2, c = 2, a[100][100], b[100][100], flat[100];
 
-  int row = 2, col = 2, matrixA[row][col], matrixB[row][col], flat[4];
+  socdef = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-  sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-  if (sock_fd < 0) {
+  if (socdef < 0) {
     printf("Socket Creation Failed!\n");
     return -1;
   }
@@ -22,53 +20,61 @@ int main() {
   server.sin_family = AF_INET;
   server.sin_port = htons(8086);
 
-  inet_pton(AF_INET, "127.0.0.1", &server.sin_addr);
+  if (inet_pton(AF_INET, "127.0.0.1", &server.sin_addr) < 0) {
+    printf("Error\n");
+    return -1;
+  }
 
-  printf("Matrix A: \n");
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      printf("A[%d][%d]: ", i + 1, j + 1);
-      scanf("%d", &matrixA[i][j]);
+  printf("Enter the elements for Matrix A: \n");
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      printf("Enter the element A[%d][%d]: ", i + 1, j + 1);
+      scanf("%d", &a[i][j]);
     }
   }
 
   int k = 0;
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      flat[k++] = matrixA[i][j];
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      flat[k++] = a[i][j];
     }
   }
 
-  sendto(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&server, clientlen);
+  sendto(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&server, clientlen);
 
-  printf("Matrix B: \n");
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      printf("B[%d][%d]: ", i + 1, j + 1);
-      scanf("%d", &matrixB[i][j]);
+  printf("Enter the elements for Matrix B: \n");
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      printf("Enter the element A[%d][%d]: ", i + 1, j + 1);
+      scanf("%d", &b[i][j]);
     }
   }
 
   k = 0;
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      flat[k++] = matrixB[i][j];
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      flat[k++] = b[i][j];
     }
   }
 
-  sendto(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&server, clientlen);
+  sendto(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&server, clientlen);
 
-  recvfrom(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&server,
-           (socklen_t *)&clientlen);
+  if (recvfrom(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&server,
+               (socklen_t *)&clientlen) < 0) {
+    printf("Receiving Resultant Matrix from Server Failed!\n");
+    return -1;
+  }
 
+  printf("Resultant Matrix: \n");
   k = 0;
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
       printf("%d\t", flat[k++]);
     }
     printf("\n");
   }
-  close(sock_fd);
+
+  close(socdef);
 
   return 0;
 }

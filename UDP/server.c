@@ -5,74 +5,72 @@
 #include <unistd.h>
 
 int main() {
-  int sock_fd;
+  int socdef;
   struct sockaddr_in client, server;
   int clientlen = sizeof(client);
+  int r = 2, c = 2, a[100][100], b[100][100], result[100][100], flat[100];
 
-  int row = 2, col = 2, flat[4], matrixA[row][col], matrixB[row][col],
-      resultMatrix[row][col];
+  socdef = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-  sock_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-  if (sock_fd < 0) {
+  if (socdef < 0) {
     printf("Socket Creation Failed!\n");
     return -1;
   }
-  printf("Socket Created Succesfully!\n");
+  printf("Socket Created Successfully!\n");
 
   server.sin_family = AF_INET;
   server.sin_port = htons(8086);
   server.sin_addr.s_addr = INADDR_ANY;
 
-  if (bind(sock_fd, (struct sockaddr *)&server, sizeof(server)) < 0) {
+  if (bind(socdef, (struct sockaddr *)&server, sizeof(server)) < 0) {
     printf("Binding Failed!\n");
     return -1;
   }
-  printf("Binded Succesfully!\n");
+  printf("Binded Successfully!\n");
 
-  if (recvfrom(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&client,
+  if (recvfrom(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&client,
                (socklen_t *)&clientlen) < 0) {
-    printf("Receiving Failed!\n");
+    printf("Receiving Matrix A Failed!\n");
   }
 
   int k = 0;
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      matrixA[i][j] = flat[k++];
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      a[i][j] = flat[k++];
     }
   }
 
-  if (recvfrom(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&client,
+  if (recvfrom(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&client,
                (socklen_t *)&clientlen) < 0) {
-    printf("Receiving Failed!\n");
+    printf("Receiving Matrix B Failed!\n");
   }
 
   k = 0;
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      matrixB[i][j] = flat[k++];
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      b[i][j] = flat[k++];
     }
   }
 
+  printf("Resultant Matrix: (Server Side Addition)\n");
   k = 0;
-  printf("Matrix Addition (Server Side): \n");
-  for (int i = 0; i < row; i++) {
-    for (int j = 0; j < col; j++) {
-      resultMatrix[i][j] = matrixA[i][j] + matrixB[i][j];
-      printf("%d\t", resultMatrix[i][j]);
-      flat[k++] = resultMatrix[i][j];
+  for (int i = 0; i < r; i++) {
+    for (int j = 0; j < c; j++) {
+      result[i][j] = a[i][j] + b[i][j];
+      printf("%d\t", result[i][j]);
+      flat[k++] = result[i][j];
     }
     printf("\n");
   }
 
-  if (sendto(sock_fd, flat, sizeof(flat), 0, (struct sockaddr *)&client,
+  if (sendto(socdef, flat, sizeof(flat), 0, (struct sockaddr *)&client,
              clientlen) < 0) {
-    printf("Sending Failed!\n");
+    printf("Sending Data to Client Failed!\n");
     return -1;
   }
 
-  printf("Result sent to the client successfully!\n");
-  close(sock_fd);
+  printf("Result Sent to Client Successfully!\n");
+  close(socdef);
 
   return 0;
 }

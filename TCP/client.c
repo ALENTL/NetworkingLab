@@ -15,6 +15,7 @@ int main() {
     printf("Socket Creation Failed!\n");
     return -1;
   }
+  printf("Socket Created Successfully!\n");
 
   memset(&addr, '0', sizeof(addr));
 
@@ -27,12 +28,12 @@ int main() {
   }
 
   if ((connect(sockfd, (struct sockaddr *)&addr, sizeof(addr))) < 0) {
-    printf("Error in new socket creation!\n");
+    printf("Error in New Socket Creation!\n");
     return -1;
   }
 
   printf("Enter the string: ");
-  scanf("%s", str);
+  fgets(str, sizeof(str), stdin);
 
   send(sockfd, str, sizeof(str), 0);
   readval = read(sockfd, str, sizeof(str));
